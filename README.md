@@ -1,2 +1,2 @@
 # gcp-iam-collector
-Python script for collecting all Google Cloud Platform IAM permissions
+Python script for collecting all [Google Cloud Platform](https://cloud.google.com/) IAM permissions

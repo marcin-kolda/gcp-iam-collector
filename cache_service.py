@@ -28,12 +28,13 @@ class CRMProjects(JsonCacheService):
         self.crm_service = crm_service
 
     def _get_filename(self, **kwargs):
-        return "cache/projects/projects_{0}.json".format(kwargs.get('nextPageToken', ''))
+        return "cache/projects/projects_{0}.json".format(
+            kwargs.get('nextPageToken', ''))
 
     def _get_data(self, **kwargs):
         return self.crm_service.projects().list(
             pageSize=10,
-            pageToken=kwargs.get('nextPageToken', None)) .execute()
+            pageToken=kwargs.get('nextPageToken', None)).execute()
 
 
 class CRMProjectIam(JsonCacheService):
@@ -46,3 +47,29 @@ class CRMProjectIam(JsonCacheService):
     def _get_data(self, **kwargs):
         return self.crm_service.projects().getIamPolicy(
             resource=kwargs['project_id'], body={}).execute()
+
+
+class ServiceAccountService(JsonCacheService):
+    def __init__(self, iam_service):
+        self.iam_service = iam_service
+
+    def _get_filename(self, **kwargs):
+        return "cache/serviceAccounts/{0}_{1}.json"\
+            .format(kwargs['project_id'], kwargs.get('nextPageToken', ''))
+
+    def _get_data(self, **kwargs):
+        return self.iam_service.projects().serviceAccounts().list(
+            name='projects/' + kwargs['project_id'],
+            pageToken=kwargs.get('nextPageToken', None)).execute()
+
+
+class ServiceAccountKeyService(JsonCacheService):
+    def __init__(self, iam_service):
+        self.iam_service = iam_service
+
+    def _get_filename(self, **kwargs):
+        return "cache/serviceAccountsKeys/{0}.json".format(kwargs['email'])
+
+    def _get_data(self, **kwargs):
+        return self.iam_service.projects().serviceAccounts().keys().list(
+            name='projects/-/serviceAccounts/' + kwargs['email']).execute()

@@ -3,7 +3,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from cache_service import CRMProjects, CRMProjectIam, ServiceAccountService, \
-    ServiceAccountKeyService
+    ServiceAccountKeyService, BQDataset, BQDatasets, GCSBuckets, GCSBucketACL
 
 from oauth2client.client import GoogleCredentials
 
@@ -11,12 +11,19 @@ from oauth2client.client import GoogleCredentials
 class GcpIamIterator:
     def __init__(self):
         credentials = GoogleCredentials.get_application_default()
-        google_crm_service = build('cloudresourcemanager', 'v1', credentials=credentials)
+        google_crm_service = build('cloudresourcemanager', 'v1',
+                                   credentials=credentials)
+        google_iam_service = build('iam', 'v1', credentials=credentials)
+        google_bq_service = build('bigquery', 'v2', credentials=credentials)
+        google_gcs_service = build('storage', 'v1', credentials=credentials)
         self.crm_service = CRMProjects(google_crm_service)
         self.crm_iam_service = CRMProjectIam(google_crm_service)
-        google_iam_service = build('iam', 'v1', credentials=credentials)
         self.sa_service = ServiceAccountService(google_iam_service)
         self.sak_service = ServiceAccountKeyService(google_iam_service)
+        self.datasets_service = BQDatasets(google_bq_service)
+        self.dataset_iam_service = BQDataset(google_bq_service)
+        self.gcs_service = GCSBuckets(google_gcs_service)
+        self.gcs_acl_service = GCSBucketACL(google_gcs_service)
 
     def list_projects(self):
         response = self.crm_service.get()
@@ -77,3 +84,72 @@ class GcpIamIterator:
 
         for key in response['keys']:
             yield key
+
+    def list_datasets(self, project_id):
+        try:
+            response = self.datasets_service.get(project_id=project_id)
+        except HttpError as e:
+            if e.resp.status == 400:
+                logging.warning("400 received for project_id: {0}"
+                                .format(project_id))
+                return
+        while response:
+            if 'datasets' in response:
+                for dataset in response['datasets']:
+                    yield dataset
+
+            if 'nextPageToken' in response:
+                response = self.datasets_service.get(project_id=project_id,
+                                                     pageToken=response[
+                                                         'nextPageToken'])
+            else:
+                response = None
+
+    def list_dataset_access(self, project_id, dataset_id):
+        response = self.dataset_iam_service.get(project_id=project_id,
+                                                dataset_id=dataset_id)
+        for access in response['access']:
+            yield access
+
+    def list_buckets(self, project_id):
+        try:
+            response = self.gcs_service.get(project_id=project_id)
+        except HttpError as e:
+            if e.resp.status == 400:
+                logging.warning(
+                    "400 received during listing buckets for project_id: {0}, message: {1}"
+                    .format(project_id, e.message))
+                return
+            elif e.resp.status == 403:
+                logging.warning(
+                    "403 received during listing buckets for project_id: {0}"
+                    .format(project_id))
+                return
+            else:
+                raise e
+
+        while response:
+            if 'items' in response:
+                for bucket in response['items']:
+                    yield bucket
+
+            if 'nextPageToken' in response:
+                response = self.gcs_service.get(project_id=project_id,
+                                                pageToken=response[
+                                                    'nextPageToken'])
+            else:
+                response = None
+
+    def list_bucket_access(self, bucket_id):
+        try:
+            response = self.gcs_acl_service.get(bucket_id=bucket_id)
+        except HttpError as e:
+            if e.resp.status == 403:
+                logging.warning("403 received for bucket_id: {0}"
+                                .format(bucket_id))
+                return
+            else:
+                raise e
+
+        for item in response['items']:
+            yield item

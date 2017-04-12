@@ -35,6 +35,7 @@ def dump_projects_iam(iam_iterator):
                     writer.writerow(
                         [project_id, role, member_type, member_name])
 
+
 def dump_service_accounts(iam_iterator):
     with open('serviceAccounts.csv', 'wb') as csvfile:
         writer = csv.writer(csvfile)
@@ -52,8 +53,50 @@ def dump_service_accounts(iam_iterator):
                          sa_key['name'].split('/')[5]])
 
 
+def dump_datasets_iam(iam_iterator):
+    with open('datasets_iam.csv', 'wb') as csvfile:
+        writer = csv.writer(csvfile)
+        for counter, project in enumerate(iam_iterator.list_projects()):
+            project_id = project['projectId']
+            logging.info("parsing project [{0}] projectId: {1}"
+                         .format(counter, project_id))
+            for dataset in iam_iterator.list_datasets(project_id):
+                dataset_id = dataset['datasetReference']['datasetId']
+                for access in iam_iterator.list_dataset_access(
+                        project_id=project_id, dataset_id=dataset_id):
+                    if 'role' not in access:
+                        continue
+                    role = access['role']
+                    iam_type = 'userByEmail' if 'userByEmail' in access \
+                        else 'groupByEmail' if 'groupByEmail' in access \
+                        else 'specialGroup' if 'specialGroup' in access \
+                        else 'None'
+                    member = access[iam_type]
+                    writer.writerow(
+                        [project_id, dataset_id, role, iam_type, member])
+
+
+def dump_buckets_iam(iam_iterator):
+    with open('buckets_iam.csv', 'wb') as csvfile:
+        writer = csv.writer(csvfile)
+        for counter, project in enumerate(iam_iterator.list_projects()):
+            project_id = project['projectId']
+            logging.info("parsing project [{0}] projectId: {1}"
+                         .format(counter, project_id))
+            for bucket in iam_iterator.list_buckets(project_id):
+                bucket_id = bucket['id']
+                for access in iam_iterator.list_bucket_access(
+                        bucket_id=bucket_id):
+                    role = access['role']
+                    entity = access['entity']
+                    writer.writerow(
+                        [project_id, project['projectNumber'], bucket_id, role, role, entity])
+
+
 if __name__ == '__main__':
     iam_iterator = GcpIamIterator()
     dump_projects(iam_iterator)
     dump_projects_iam(iam_iterator)
     dump_service_accounts(iam_iterator)
+    dump_datasets_iam(iam_iterator)
+    dump_buckets_iam(iam_iterator)

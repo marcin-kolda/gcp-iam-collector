@@ -89,8 +89,15 @@ def dump_buckets_iam(iam_iterator):
                         bucket_id=bucket_id):
                     role = access['role']
                     entity = access['entity']
+                    if 'projectTeam' in access:
+                        member_type = access['projectTeam']['team']
+                    else:
+                        member_type = entity.split('-')[0]
+                    member = entity.split('-', 1)[
+                        1] if '-' in entity else entity
                     writer.writerow(
                         [project_id, project['projectNumber'], bucket_id, role,
+                         member_type, member,
                          entity])
 
 

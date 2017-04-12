@@ -90,7 +90,8 @@ def dump_buckets_iam(iam_iterator):
                     role = access['role']
                     entity = access['entity']
                     writer.writerow(
-                        [project_id, project['projectNumber'], bucket_id, role, role, entity])
+                        [project_id, project['projectNumber'], bucket_id, role,
+                         entity])
 
 
 if __name__ == '__main__':

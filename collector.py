@@ -45,12 +45,19 @@ def dump_service_accounts(iam_iterator):
                          .format(counter, project_id))
             for account in iam_iterator.list_service_accounts(project_id):
                 email = account['email']
+
+                sa_key_exists = False
                 for sa_key in iam_iterator.list_service_account_keys(email):
+                    sa_key_exists = True
                     writer.writerow(
                         [project_id, email, account.get('displayName', ''),
                          sa_key['validAfterTime'],
                          sa_key['validBeforeTime'],
                          sa_key['name'].split('/')[5]])
+                if not sa_key_exists:
+                    writer.writerow(
+                        [project_id, email, account.get('displayName', ''), '',
+                         '', ''])
 
 
 def dump_datasets_iam(iam_iterator):

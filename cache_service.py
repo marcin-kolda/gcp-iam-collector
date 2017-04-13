@@ -63,7 +63,8 @@ class ServiceAccountKeyService(JsonCacheService):
 
     def _get_data(self, **kwargs):
         return self.service.projects().serviceAccounts().keys().list(
-            name='projects/-/serviceAccounts/' + kwargs['email']).execute()
+            name='projects/-/serviceAccounts/' + kwargs['email'],
+            keyTypes='USER_MANAGED').execute()
 
 
 class GCSBuckets(JsonCacheService):

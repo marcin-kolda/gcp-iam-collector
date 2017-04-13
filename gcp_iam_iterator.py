@@ -82,8 +82,9 @@ class GcpIamIterator:
     def list_service_account_keys(self, email):
         response = self.sak_service.get(email=email)
 
-        for key in response['keys']:
-            yield key
+        if 'keys' in response:
+            for key in response['keys']:
+                yield key
 
     def list_datasets(self, project_id):
         response = None

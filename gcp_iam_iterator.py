@@ -43,8 +43,8 @@ class GcpIamIterator:
             iam_policy = self.crm_iam_service.get(project_id=project_id)
         except HttpError as e:
             if e.resp.status == 403:
-                logging.warning("403 received for project_id: {0}"
-                                .format(project_id))
+                logging.warning("403 received for project_id: {0}, content: {1}"
+                                .format(project_id, e.content))
                 return
             else:
                 raise e
@@ -58,12 +58,12 @@ class GcpIamIterator:
             response = self.sa_service.get(project_id=project_id)
         except HttpError as e:
             if e.resp.status == 404:
-                logging.info("404 received for project_id: {0}"
-                             .format(project_id))
+                logging.info("404 received for project_id: {0}, content: {1}"
+                             .format(project_id, e.content))
                 return
             elif e.resp.status == 403:
-                logging.warning("403 received for project_id: {0}"
-                                .format(project_id))
+                logging.warning("403 received for project_id: {0}, content: {1}"
+                                .format(project_id, e.content))
                 return
             else:
                 raise e
@@ -86,13 +86,15 @@ class GcpIamIterator:
             yield key
 
     def list_datasets(self, project_id):
+        response = None
         try:
             response = self.datasets_service.get(project_id=project_id)
         except HttpError as e:
             if e.resp.status == 400:
-                logging.warning("400 received for project_id: {0}"
-                                .format(project_id))
+                logging.warning("400 received for project_id: {0}, content: {1}"
+                                .format(project_id, e.content))
                 return
+
         while response:
             if 'datasets' in response:
                 for dataset in response['datasets']:
@@ -108,8 +110,9 @@ class GcpIamIterator:
     def list_dataset_access(self, project_id, dataset_id):
         response = self.dataset_iam_service.get(project_id=project_id,
                                                 dataset_id=dataset_id)
-        for access in response['access']:
-            yield access
+        if 'access' in response:
+            for access in response['access']:
+                yield access
 
     def list_buckets(self, project_id):
         try:
@@ -117,13 +120,13 @@ class GcpIamIterator:
         except HttpError as e:
             if e.resp.status == 400:
                 logging.warning(
-                    "400 received during listing buckets for project_id: {0}, message: {1}"
-                    .format(project_id, e.message))
+                    "400 received during listing buckets for project_id: {0}, content: {1}"
+                    .format(project_id, e.content))
                 return
             elif e.resp.status == 403:
                 logging.warning(
-                    "403 received during listing buckets for project_id: {0}"
-                    .format(project_id))
+                    "403 received during listing buckets for project_id: {0}, content: {1}"
+                    .format(project_id, e.content))
                 return
             else:
                 raise e
@@ -145,8 +148,8 @@ class GcpIamIterator:
             response = self.gcs_acl_service.get(bucket_id=bucket_id)
         except HttpError as e:
             if e.resp.status == 403:
-                logging.warning("403 received for bucket_id: {0}"
-                                .format(bucket_id))
+                logging.warning("403 received for bucket_id: {0}, content: {1}"
+                                .format(bucket_id, e.content))
                 return
             else:
                 raise e

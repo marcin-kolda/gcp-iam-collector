@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+    <title>GCP IAM graph</title>
+
+    <style type="text/css">
+        html, body {
+            height: 90%;
+        }
+        #visualisation {
+            width: 100%;
+            height: 100%;
+            border: 1px solid lightgray;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.min.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript">
+        var nodeTypes = {{ default_filters }};
+        var roleTypes = {{ all_roles.keys() }};
+
+        var data, nodeList, edgeList;
+
+        function draw() {
+
+            var container = document.getElementById('visualisation');
+            nodeList = [{{ nodes_string }}];
+            edgeList = [{{ edges_string }}];
+            data = {
+                nodes: new vis.DataSet(nodeList),
+                edges: new vis.DataSet(edgeList)
+            };
+            var options = {
+                nodes: {
+                    shape: 'dot',
+                    scaling: {
+                        label: {
+                            min: 8,
+                            max: 20
+                        }
+                    }
+                },
+                edges: {
+                    length: 500,
+                    smooth: {
+                          enabled: true,
+                          type: "dynamic",
+                          roundness: 0.2
+                    }
+                },
+                physics: {
+                    stabilization: false
+                },
+                layout: {
+                    randomSeed: 2
+                },
+                interaction: {
+                    hideEdgesOnDrag: true,
+                    hover: true,
+                    navigationButtons: true,
+                    keyboard: true
+                }
+            };
+            filterNodes();
+            network = new vis.Network(container, data, options);
+        }
+
+        var filterNodes = function () {
+            nodeList.forEach(function (node) {
+                try {
+                    var index = nodeTypes.indexOf(node.type);
+                    var isRemoved = index == -1;
+                    if (isRemoved) {
+                        data.nodes.remove(node);
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            });
+        };
+
+        var filterEdges = function () {
+            edgeList.forEach(function (edge) {
+                try {
+                    var index = roleTypes.indexOf(edge.type);
+                    var isRemoved = index == -1;
+                    if (isRemoved) {
+                        data.edges.remove(edge);
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            });
+        };
+
+        var filterByType = function (type) {
+            var index = nodeTypes.indexOf(type);
+            var type_added = index == -1;
+            if (type_added) {
+                nodeTypes.push(type);
+            } else {
+                nodeTypes.splice(index, 1);
+            }
+
+            var the_nodes = nodeList.filter(function (item) {
+                return item.type == type;
+            });
+
+            the_nodes.forEach(function (node) {
+                try {
+                    if (type_added) {
+                        data.nodes.add(node);
+                    } else {
+                        data.nodes.remove(node);
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            });
+        };
+
+        var filterByEdgeType = function (type) {
+            var index = roleTypes.indexOf(type);
+            var type_added = index == -1;
+            if (type_added) {
+                roleTypes.push(type);
+            } else {
+                roleTypes.splice(index, 1);
+            }
+
+            var the_edges = edgeList.filter(function (item) {
+                return item.role == type;
+            });
+
+            the_edges.forEach(function (edge) {
+                try {
+                    if (type_added) {
+                        data.edges.add(edge);
+                    } else {
+                        data.edges.remove(edge);
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            });
+        };
+    </script>
+</head>
+<body onload="draw()">
+
+<p>Types:
+{% for key, value in type_properties.iteritems() %}
+    <input
+     {% if key in default_filters %}
+     checked="true"
+     {% endif %}
+      type="checkbox" onclick="filterByType('{{ key }}')">
+    <i style="font-family: FontAwesome; font-style: normal; color: {{value['color']}}" class=icon-foo>&#x{{ value['font_code'][2:] }};</i>
+    {{ value['name'] }}</input>
+{% endfor %}
+</p>
+<p>
+Role types:
+{% for key, value in all_roles.iteritems() %}
+    <input checked="true" type="checkbox" onclick="filterByEdgeType('{{ key }}')">
+    <span style="color: {{value}}">{{ key }}</span></input>
+{% endfor %}
+</p>
+<div id="visualisation"></div>
+</body>
+</html>

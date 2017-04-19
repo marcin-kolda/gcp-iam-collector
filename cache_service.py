@@ -107,3 +107,14 @@ class BQDatasets(JsonCacheService):
         return self.service.datasets().list(
             projectId=kwargs['project_id'],
             pageToken=kwargs.get('pageToken', '')).execute()
+
+
+class ServiceManagement(JsonCacheService):
+    def _get_filename(self, **kwargs):
+        return "cache/{0}/services_{1}.json" \
+            .format(kwargs['project_id'], kwargs.get('pageToken', ''))
+
+    def _get_data(self, **kwargs):
+        return self.service.services().list(
+            consumerId='project:' + kwargs['project_id'],
+            pageToken=kwargs.get('pageToken', '')).execute()

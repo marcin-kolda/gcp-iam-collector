@@ -85,8 +85,8 @@ def format_graph(nodes, edges, role_color_map):
 
     for edge in edges:
         value = {
-            'from': node_ids[edge.nodeFrom.id],
-            'to': node_ids[edge.nodeTo.id],
+            'from': node_ids[edge.node_from.id],
+            'to': node_ids[edge.node_to.id],
             'arrows': 'to',
         }
         if edge.label:

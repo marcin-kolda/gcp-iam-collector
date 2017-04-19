@@ -3,7 +3,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from cache_service import CRMProjects, CRMProjectIam, ServiceAccountService, \
-    ServiceAccountKeyService, BQDataset, BQDatasets, GCSBuckets, GCSBucketACL
+    ServiceAccountKeyService, BQDataset, BQDatasets, GCSBuckets, GCSBucketACL, \
+    ServiceManagement
 
 from oauth2client.client import GoogleCredentials
 
@@ -16,6 +17,8 @@ class GcpIamIterator:
         google_iam_service = build('iam', 'v1', credentials=credentials)
         google_bq_service = build('bigquery', 'v2', credentials=credentials)
         google_gcs_service = build('storage', 'v1', credentials=credentials)
+        google_service_management = build('servicemanagement', 'v1',
+                                          credentials=credentials)
         self.crm_service = CRMProjects(google_crm_service)
         self.crm_iam_service = CRMProjectIam(google_crm_service)
         self.sa_service = ServiceAccountService(google_iam_service)
@@ -24,6 +27,7 @@ class GcpIamIterator:
         self.dataset_iam_service = BQDataset(google_bq_service)
         self.gcs_service = GCSBuckets(google_gcs_service)
         self.gcs_acl_service = GCSBucketACL(google_gcs_service)
+        self.service_management = ServiceManagement(google_service_management)
 
     def list_projects(self):
         response = self.crm_service.get()
@@ -121,13 +125,13 @@ class GcpIamIterator:
         except HttpError as e:
             if e.resp.status == 400:
                 logging.warning(
-                    "400 received during listing buckets for project_id: {0}, content: {1}"
-                    .format(project_id, e.content))
+                    "400 received during listing buckets for project_id: {0}, "
+                    "content: {1}".format(project_id, e.content))
                 return
             elif e.resp.status == 403:
                 logging.warning(
-                    "403 received during listing buckets for project_id: {0}, content: {1}"
-                    .format(project_id, e.content))
+                    "403 received during listing buckets for project_id: {0}, "
+                    "content: {1}".format(project_id, e.content))
                 return
             else:
                 raise e
@@ -157,3 +161,28 @@ class GcpIamIterator:
 
         for item in response['items']:
             yield item
+
+    def list_enabled_services(self, project_id):
+        try:
+            response = self.service_management.get(project_id=project_id)
+        except HttpError as e:
+            if e.resp.status == 400 or e.resp.status == 403 \
+                    or e.resp.status == 404:
+                logging.warning(
+                    "{0} received during listing services for project_id: {1}, "
+                    "content: {2}".format(e.resp.status, project_id, e.content))
+                return
+            else:
+                raise e
+
+        while response:
+            if 'services' in response:
+                for service in response['services']:
+                    yield service
+
+            if 'nextPageToken' in response:
+                response = self.service_management.get(project_id=project_id,
+                                                       pageToken=response[
+                                                           'nextPageToken'])
+            else:
+                response = None

@@ -61,8 +61,8 @@ class Node:
 
 class Edge:
     def __init__(self, node_from, node_to, label=None, title=None, role=None):
-        self.nodeFrom = node_from
-        self.nodeTo = node_to
+        self.node_from = node_from
+        self.node_to = node_to
         self.label = label
         self.title = title if title else role
         self.role = role

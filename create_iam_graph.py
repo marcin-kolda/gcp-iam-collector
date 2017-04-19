@@ -1,25 +1,26 @@
 import logging
+import sys
 
 from gcp_iam_iterator import GcpIamIterator
 from visualisation.graph import Node, Edge
 from visualisation import template_renderer
 
-
-def create_project_nodes(iam_iterator):
-    nodes = []
-    for counter, project in enumerate(iam_iterator.list_projects()):
-        project_id = project['projectId']
-        logging.info("parsing project [{0}] projectId: {1}"
-                     .format(counter, project_id))
-        properties = {k: v for k, v in project.iteritems() if
-                      'projectNumber' in k or 'name' in k or 'createTime' in k}
-        node = Node("project", "p:" + project_id, project_id,
-                    properties=properties)
-        nodes.append(node)
-    return nodes
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-5s %(filename)-12s %(message)s',
+    level=logging.DEBUG, stream=sys.stdout)
 
 
-def create_service_account_nodes(iam_iterator):
+def get_project_enabled_services(iam_iterator, project_id):
+    iterator = iam_iterator.list_enabled_services(project_id)
+    services = [v['serviceName'][:-15] for v in iterator if
+                v['serviceName'] in ['cloudresourcemanager.googleapis.com',
+                                     'appengine.googleapis.com',
+                                     'deploymentmanager.googleapis.com',
+                                     'servicemanagement.googleapis.com']]
+    return services
+
+
+def create_graph(iam_iterator):
     nodes = {}
     edges = []
     for counter, project in enumerate(iam_iterator.list_projects()):
@@ -29,6 +30,8 @@ def create_service_account_nodes(iam_iterator):
         project_properties = {k: v for k, v in project.iteritems() if
                               k in ['projectNumber', 'name', 'createTime',
                                     'projectId']}
+        services = get_project_enabled_services(iam_iterator, project_id)
+        project_properties['enabled_services'] = ", ".join(services)
         project_node = Node("project", "p:" + project_id, project_id,
                             properties=project_properties)
         nodes[project_node.id] = project_node
@@ -60,11 +63,38 @@ def create_service_account_nodes(iam_iterator):
             sa_node = Node("serviceAccount", sa_id, email,
                            properties=sa_properties)
             nodes[sa_node.id] = sa_node
-            edges.append(Edge(sa_node, project_node))
+            edges.append(Edge(project_node, sa_node))
     return nodes.values(), edges
 
 
+def dfs(edges_per_project, start):
+    visited_nodes = set()
+    stack = [start]
+    edges = []
+    while stack:
+        node = stack.pop()
+        if node not in visited_nodes:
+            visited_nodes.add(node)
+            for edge in edges_per_project[node.id]:
+                edges.append(edge)
+                if edge.node_to not in visited_nodes:
+                    stack.append(edge.node_to)
+    return visited_nodes, edges
+
 if __name__ == '__main__':
-    nodes, edges = create_service_account_nodes(GcpIamIterator())
+    nodes, edges = create_graph(GcpIamIterator())
+
+    initial_node = 'p:initial_node'
+
+    edges_per_project = {}
+    for edge in edges:
+        project_edges = edges_per_project.get(edge.node_from.id, [])
+        project_edges.append(edge)
+        edges_per_project[edge.node_from.id] = project_edges
+    nodes_dict = {}
+    for node in nodes:
+        nodes_dict[node.id] = node
+
+    nodes, edges = dfs(edges_per_project, nodes_dict[initial_node])
 
     template_renderer.render(nodes, edges, 'iam_graph.html')

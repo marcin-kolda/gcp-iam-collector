@@ -1,6 +1,8 @@
 # gcp-iam-collector
 Python scripts for collecting and visualising [Google Cloud Platform](https://cloud.google.com/) IAM permissions
 
+GCP IAM graph is created using [vis.js](http://visjs.org/) and it's static HTML page.
+
 ## Features
 
 GCP IAM collector iterates over projects using [Google Cloud Resource Manager API](https://cloud.google.com/resource-manager/reference/rest/v1/projects/list) and dumps to CSV files:

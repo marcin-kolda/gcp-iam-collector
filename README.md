@@ -3,6 +3,8 @@ Python scripts for collecting and visualising [Google Cloud Platform](https://cl
 
 GCP IAM graph is created using [vis.js](http://visjs.org/) and it's static HTML page.
 
+![Example graph](https://raw.githubusercontent.com/marcin-kolda/gcp-iam-collector/master/example_graph.png)
+
 ## Features
 
 GCP IAM collector iterates over projects using [Google Cloud Resource Manager API](https://cloud.google.com/resource-manager/reference/rest/v1/projects/list) and dumps to CSV files:

@@ -97,7 +97,7 @@ def render_from_single_node(initial_node, nodes, edges):
     template_renderer.render(nodes, edges, 'iam_graph.html')
 
 if __name__ == '__main__':
-    iam_iterator = GcpIamIterator(use_cache=True)
+    iam_iterator = GcpIamIterator(use_cache=False)
     projects = list(iam_iterator.list_projects())
     nodes, edges = create_graph(iam_iterator, projects=projects)
 

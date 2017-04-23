@@ -109,7 +109,7 @@ def dump_buckets_iam(iam_iterator):
 
 
 if __name__ == '__main__':
-    iam_iterator = GcpIamIterator()
+    iam_iterator = GcpIamIterator(use_cache=False)
     dump_projects(iam_iterator)
     dump_projects_iam(iam_iterator)
     dump_service_accounts(iam_iterator)

@@ -1,9 +1,9 @@
 # gcp-iam-collector
 Python scripts for collecting and visualising [Google Cloud Platform](https://cloud.google.com/) IAM permissions
 
-GCP IAM graph is created using [vis.js](http://visjs.org/) and it's static HTML page.
-
-![Example graph](https://raw.githubusercontent.com/marcin-kolda/gcp-iam-collector/master/example_graph.png)
+GCP IAM graph is created using [vis.js](http://visjs.org/) and it's static HTML page, see [example interactive graph](https://storage.googleapis.com/gcp-iam-collector/iam_graph_example.html)
+https://storage.googleapis.com/gcp-iam-collector/iam_graph_example.html
+[![Example graph](https://raw.githubusercontent.com/marcin-kolda/gcp-iam-collector/master/example_graph.png)](https://storage.googleapis.com/gcp-iam-collector/iam_graph_example.html)
 
 ## Features
 

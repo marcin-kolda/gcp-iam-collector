@@ -10,7 +10,7 @@ from oauth2client.client import GoogleCredentials
 
 
 class GcpIamIterator:
-    def __init__(self):
+    def __init__(self, use_cache=True):
         credentials = GoogleCredentials.get_application_default()
         google_crm_service = build('cloudresourcemanager', 'v1',
                                    credentials=credentials)
@@ -19,15 +19,17 @@ class GcpIamIterator:
         google_gcs_service = build('storage', 'v1', credentials=credentials)
         google_service_management = build('servicemanagement', 'v1',
                                           credentials=credentials)
-        self.crm_service = CRMProjects(google_crm_service)
-        self.crm_iam_service = CRMProjectIam(google_crm_service)
-        self.sa_service = ServiceAccountService(google_iam_service)
-        self.sak_service = ServiceAccountKeyService(google_iam_service)
-        self.datasets_service = BQDatasets(google_bq_service)
-        self.dataset_iam_service = BQDataset(google_bq_service)
-        self.gcs_service = GCSBuckets(google_gcs_service)
-        self.gcs_acl_service = GCSBucketACL(google_gcs_service)
-        self.service_management = ServiceManagement(google_service_management)
+        self.crm_service = CRMProjects(google_crm_service, use_cache)
+        self.crm_iam_service = CRMProjectIam(google_crm_service, use_cache)
+        self.sa_service = ServiceAccountService(google_iam_service, use_cache)
+        self.sak_service = ServiceAccountKeyService(google_iam_service,
+                                                    use_cache)
+        self.datasets_service = BQDatasets(google_bq_service, use_cache)
+        self.dataset_iam_service = BQDataset(google_bq_service, use_cache)
+        self.gcs_service = GCSBuckets(google_gcs_service, use_cache)
+        self.gcs_acl_service = GCSBucketACL(google_gcs_service, use_cache)
+        self.service_management = ServiceManagement(google_service_management,
+                                                    use_cache)
 
     def list_projects(self):
         response = self.crm_service.get()

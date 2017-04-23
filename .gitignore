@@ -5,6 +5,6 @@
 
 cache
 *.csv
-*.txt
+csv
 *.sh
 *.html

@@ -3,19 +3,22 @@ import json
 
 
 class JsonCacheService(object):
-    def __init__(self, service):
+    def __init__(self, service, use_cache):
         self.service = service
+        self.use_cache = use_cache
 
     def get(self, **kwargs):
         cached_file = self._get_filename(**kwargs)
-        if os.path.isfile(cached_file):
-            with open(cached_file) as data_file:
-                return json.load(data_file)
+        if self.use_cache:
+            if os.path.isfile(cached_file):
+                with open(cached_file) as data_file:
+                    return json.load(data_file)
         response = self._get_data(**kwargs)
-        if not os.path.exists(os.path.dirname(cached_file)):
-            os.makedirs(os.path.dirname(cached_file))
-        with open(cached_file, 'w') as data_file:
-            json.dump(response, data_file)
+        if self.use_cache:
+            if not os.path.exists(os.path.dirname(cached_file)):
+                os.makedirs(os.path.dirname(cached_file))
+            with open(cached_file, 'w') as data_file:
+                json.dump(response, data_file)
 
         return response
 
@@ -33,7 +36,7 @@ class CRMProjects(JsonCacheService):
 
     def _get_data(self, **kwargs):
         return self.service.projects().list(
-            pageSize=10,
+            pageSize=400,
             pageToken=kwargs.get('nextPageToken', None)).execute()
 
 

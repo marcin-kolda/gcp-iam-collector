@@ -20,10 +20,10 @@ def get_project_enabled_services(iam_iterator, project_id):
     return services
 
 
-def create_graph(iam_iterator):
+def create_graph(iam_iterator, projects):
     nodes = {}
     edges = []
-    for counter, project in enumerate(iam_iterator.list_projects()):
+    for counter, project in enumerate(projects):
         project_id = project['projectId']
         logging.info("parsing project [{0}] projectId: {1}"
                      .format(counter, project_id))
@@ -46,7 +46,7 @@ def create_graph(iam_iterator):
                                    properties={'email': member_name})
                     edges.append(Edge(sa_node, project_node, role=role))
                     nodes[sa_node.id] = sa_node
-    for counter, project in enumerate(iam_iterator.list_projects()):
+    for counter, project in enumerate(projects):
         project_id = project['projectId']
         project_properties = {k: v for k, v in project.iteritems() if
                               k in ['projectNumber', 'name', 'createTime']}
@@ -81,11 +81,8 @@ def dfs(edges_per_project, start):
                     stack.append(edge.node_to)
     return visited_nodes, edges
 
-if __name__ == '__main__':
-    nodes, edges = create_graph(GcpIamIterator())
 
-    initial_node = 'p:initial_node'
-
+def render_from_single_node(initial_node, nodes, edges):
     edges_per_project = {}
     for edge in edges:
         project_edges = edges_per_project.get(edge.node_from.id, [])
@@ -98,3 +95,11 @@ if __name__ == '__main__':
     nodes, edges = dfs(edges_per_project, nodes_dict[initial_node])
 
     template_renderer.render(nodes, edges, 'iam_graph.html')
+
+if __name__ == '__main__':
+    iam_iterator = GcpIamIterator(use_cache=True)
+    projects = list(iam_iterator.list_projects())
+    nodes, edges = create_graph(iam_iterator, projects=projects)
+
+    template_renderer.render(nodes, edges, 'iam_graph_full.html')
+
